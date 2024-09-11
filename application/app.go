@@ -31,7 +31,7 @@ func (a *App) Start(ctx context.Context) error {
 
 	err := a.rdb.Ping(ctx).Err()
 	if err != nil {
-		return fmt.Errorf("Failed to connect to redis: %w", err)
+		return fmt.Errorf("failed to connect to redis: %w", err)
 	}
 
 	defer func() {
@@ -47,7 +47,7 @@ func (a *App) Start(ctx context.Context) error {
 	go func() {
 		err = server.ListenAndServe()
 		if err != nil {
-			ch <- fmt.Errorf("Failed to listen to server: %w", err)
+			ch <- fmt.Errorf("failed to listen to server: %w", err)
 		}
 		close(ch)
 	}()
