@@ -1,24 +1,38 @@
 package application
 
 import (
-	"net/http"
-
 	"github.com/go-chi/chi/middleware"
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/cors"
 
 	"github.com/guigateixeira/general-auth/handler"
 )
 
 func loadRoutes() *chi.Mux {
+	// Creates a new router for the microservice
 	router := chi.NewRouter()
 
+	// Use logger middleware
 	router.Use(middleware.Logger)
 
-	router.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-	})
+	// Use CORS middleware
+	router.Use(cors.Handler(cors.Options{
+		AllowedOrigins:   []string{"https://*", "http://*"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"*"},
+		ExposedHeaders:   []string{"Link"},
+		AllowCredentials: false,
+		MaxAge:           300,
+	}))
 
-	router.Route("/orders", loadOrderRoutes)
+	v1Router := chi.NewRouter()
+
+	// Starndard health check endpoint
+	v1Router.Get("/health", handler.HandlerReadiness)
+
+	v1Router.Route("/orders", loadOrderRoutes)
+
+	router.Mount("/v1", v1Router)
 
 	return router
 }
