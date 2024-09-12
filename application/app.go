@@ -2,26 +2,44 @@ package application
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"time"
 
+	"github.com/guigateixeira/general-auth/internal/database"
 	"github.com/joho/godotenv"
-	"github.com/redis/go-redis/v9"
+	_ "github.com/lib/pq"
 )
 
 type App struct {
-	router http.Handler
-	rdb    *redis.Client
+	router   http.Handler
+	database *database.Queries
+	// rdb    *redis.Client
 }
 
 func New() *App {
 	app := &App{
 		router: loadRoutes(),
-		// rdb:    redis.NewClient(&redis.Options{}),
 	}
+
+	godotenv.Load(".env")
+
+	dbURL := os.Getenv("DATABASE_URL")
+	if dbURL == "" {
+		log.Fatal("DB URL is not found")
+	}
+
+	// Connect to the database
+	conn, err := sql.Open("postgres", dbURL)
+	if err != nil {
+		log.Fatal("failed to connect to database:", err)
+	}
+
+	// Initialize the queries object and set it to the App struct
+	app.database = database.New(conn)
 
 	return app
 }
@@ -32,6 +50,11 @@ func (a *App) Start(ctx context.Context) error {
 	port := os.Getenv("PORT")
 	if port == "" {
 		log.Fatal("PORT environment variable is not set")
+	}
+
+	dbURL := os.Getenv("DATABASE_URL")
+	if dbURL == "" {
+		log.Fatal("DB URL is not found")
 	}
 
 	server := &http.Server{
@@ -50,7 +73,7 @@ func (a *App) Start(ctx context.Context) error {
 	// 	}
 	// }()
 
-	fmt.Println("Starting server")
+	fmt.Println("Starting server in port", port)
 
 	ch := make(chan error, 1)
 
