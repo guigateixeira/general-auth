@@ -9,7 +9,10 @@ import (
 	"os"
 	"time"
 
+	"github.com/guigateixeira/general-auth/handler"
 	"github.com/guigateixeira/general-auth/internal/database"
+	"github.com/guigateixeira/general-auth/repositories"
+	"github.com/guigateixeira/general-auth/services"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 )
@@ -21,10 +24,6 @@ type App struct {
 }
 
 func New() *App {
-	app := &App{
-		router: loadRoutes(),
-	}
-
 	godotenv.Load(".env")
 
 	dbURL := os.Getenv("DATABASE_URL")
@@ -39,8 +38,21 @@ func New() *App {
 	}
 
 	// Initialize the queries object and set it to the App struct
-	app.database = database.New(conn)
+	databaseConn := database.New(conn)
 
+	// Initialize repositories
+	userRepo := repositories.New(databaseConn)
+
+	// Initialize services
+	userSvc := services.New(userRepo)
+
+	// Initialize handlers
+	userHandler := handler.New(userSvc)
+
+	app := &App{
+		router:   loadRoutes(userHandler),
+		database: databaseConn,
+	}
 	return app
 }
 
@@ -61,17 +73,6 @@ func (a *App) Start(ctx context.Context) error {
 		Addr:    ":" + port,
 		Handler: a.router,
 	}
-
-	// err := a.rdb.Ping(ctx).Err()
-	// if err != nil {
-	// 	return fmt.Errorf("failed to connect to redis: %w", err)
-	// }
-
-	// defer func() {
-	// 	if err := a.rdb.Close(); err != nil {
-	// 		fmt.Println("Failed to close redis connection", err)
-	// 	}
-	// }()
 
 	fmt.Println("Starting server in port", port)
 

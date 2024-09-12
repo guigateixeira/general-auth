@@ -8,14 +8,11 @@ import (
 	"github.com/guigateixeira/general-auth/handler"
 )
 
-func loadRoutes() *chi.Mux {
-	// Creates a new router for the microservice
+func loadRoutes(userHandler *handler.UserHandler) *chi.Mux {
 	router := chi.NewRouter()
 
-	// Use logger middleware
 	router.Use(middleware.Logger)
 
-	// Use CORS middleware
 	router.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   []string{"https://*", "http://*"},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
@@ -30,19 +27,15 @@ func loadRoutes() *chi.Mux {
 	// Starndard health check endpoint
 	v1Router.Get("/health", handler.HandlerReadiness)
 
-	v1Router.Route("/orders", loadOrderRoutes)
+	v1Router.Route("/users", func(router chi.Router) {
+		loadUserRoutes(router, userHandler)
+	})
 
 	router.Mount("/v1", v1Router)
 
 	return router
 }
 
-func loadOrderRoutes(router chi.Router) {
-	orderHandler := &handler.Order{}
-
-	router.Post("/", orderHandler.Create)
-	router.Get("/", orderHandler.List)
-	router.Get("/{id}", orderHandler.GetByID)
-	router.Put("/{id}", orderHandler.UpdateByID)
-	router.Delete("/{id}", orderHandler.DeleteById)
+func loadUserRoutes(router chi.Router, userHandler *handler.UserHandler) {
+	router.Post("/signup", userHandler.CreateUser)
 }
