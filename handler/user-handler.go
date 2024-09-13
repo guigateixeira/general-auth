@@ -10,11 +10,11 @@ import (
 )
 
 type UserHandler struct {
-	service *services.UserService
+	userService *services.UserService
 }
 
-func New(service *services.UserService) *UserHandler {
-	return &UserHandler{service: service}
+func New(userService *services.UserService) *UserHandler {
+	return &UserHandler{userService: userService}
 }
 
 type CreateUserRequest struct {
@@ -36,9 +36,13 @@ func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ctx := r.Context()
-	userID, err := h.service.CreateUser(ctx, req.Email, req.Password)
+	userID, err := h.userService.CreateUser(ctx, req.Email, req.Password)
 	if err != nil {
-		util.RespondWithError(w, http.StatusInternalServerError, "Failed to create user")
+		errorMessage := "Failed to create user"
+		if err.Error() != "" {
+			errorMessage = err.Error()
+		}
+		util.RespondWithError(w, http.StatusInternalServerError, errorMessage)
 		return
 	}
 
