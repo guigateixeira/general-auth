@@ -25,7 +25,7 @@ type CreateUserRequest struct {
 func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	var req CreateUserRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		util.RespondWithError(w, http.StatusBadRequest, "Invalid request payload")
 		return
 	}
 

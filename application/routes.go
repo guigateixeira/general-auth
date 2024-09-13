@@ -1,17 +1,21 @@
 package application
 
 import (
+	"net/http"
+
 	"github.com/go-chi/chi/middleware"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/cors"
 
 	"github.com/guigateixeira/general-auth/handler"
+	"github.com/guigateixeira/general-auth/middlewares"
 )
 
 func loadRoutes(userHandler *handler.UserHandler) *chi.Mux {
 	router := chi.NewRouter()
 
 	router.Use(middleware.Logger)
+	router.Use(middlewares.SanitizeInputMiddleware)
 
 	router.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   []string{"https://*", "http://*"},
@@ -37,5 +41,5 @@ func loadRoutes(userHandler *handler.UserHandler) *chi.Mux {
 }
 
 func loadUserRoutes(router chi.Router, userHandler *handler.UserHandler) {
-	router.Post("/signup", userHandler.CreateUser)
+	router.Post("/signup", middlewares.EmailValidatorMiddleware(http.HandlerFunc(userHandler.CreateUser)))
 }
