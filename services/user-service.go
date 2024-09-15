@@ -2,9 +2,9 @@ package services
 
 import (
 	"context"
-	"errors"
 	"log"
 
+	"github.com/guigateixeira/general-auth/errors"
 	"github.com/guigateixeira/general-auth/model"
 	"github.com/guigateixeira/general-auth/repositories"
 )
@@ -19,8 +19,12 @@ func New(userRepository *repositories.UserRepository) *UserService {
 
 func (s *UserService) CreateUser(ctx context.Context, email string, password string) (string, error) {
 	user, err := s.userRepository.GetUserByEmail(ctx, email)
+	if err != nil {
+		log.Printf("Service layer error getting user by email: %v", err)
+		return "", err
+	}
 	if user != nil {
-		return "", errors.New("Email is already taken")
+		return "", errors.NewBaseError("Email is already taken", 400)
 	}
 	userID, err := s.userRepository.CreateUser(ctx, email, password)
 	if err != nil {

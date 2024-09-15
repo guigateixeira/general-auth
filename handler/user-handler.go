@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/guigateixeira/general-auth/errors"
 	"github.com/guigateixeira/general-auth/services"
 	"github.com/guigateixeira/general-auth/util"
 )
@@ -29,7 +30,6 @@ func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Validate required fields
 	if strings.TrimSpace(req.Email) == "" || strings.TrimSpace(req.Password) == "" {
 		util.RespondWithError(w, http.StatusBadRequest, "Missing required fields: email and password")
 		return
@@ -38,11 +38,11 @@ func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	userID, err := h.userService.CreateUser(ctx, req.Email, req.Password)
 	if err != nil {
-		errorMessage := "Failed to create user"
-		if err.Error() != "" {
-			errorMessage = err.Error()
+		serviceErr, ok := err.(*errors.BaseError)
+		if !ok {
+			serviceErr = errors.NewBaseError("Unknown error occurred", http.StatusInternalServerError)
 		}
-		util.RespondWithError(w, http.StatusInternalServerError, errorMessage)
+		util.RespondWithError(w, serviceErr.StatusCode, serviceErr.Message)
 		return
 	}
 
