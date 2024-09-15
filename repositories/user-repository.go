@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"context"
+	"database/sql"
 	"log"
 
 	"github.com/guigateixeira/general-auth/internal/database"
@@ -31,6 +32,9 @@ func (r *UserRepository) CreateUser(context context.Context, email string, passw
 func (r *UserRepository) GetUserByEmail(ctx context.Context, email string) (*model.User, error) {
 	user, err := r.db.GetUserByEmail(ctx, email)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
 		log.Printf("Error getting user by email: %v", err)
 		return nil, err
 	}

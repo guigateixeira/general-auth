@@ -49,3 +49,35 @@ func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	response := map[string]string{"userId": userID}
 	util.RespondWithJSON(w, http.StatusCreated, response)
 }
+
+type SignInRequest struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
+func (h *UserHandler) SignIn(w http.ResponseWriter, r *http.Request) {
+	var req SignInRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		util.RespondWithError(w, http.StatusBadRequest, "Invalid request payload")
+		return
+	}
+
+	if req.Email == "" || req.Password == "" {
+		util.RespondWithError(w, http.StatusBadRequest, "Email and password are required")
+		return
+	}
+
+	ctx := r.Context()
+	token, err := h.userService.SignIn(ctx, req.Email, req.Password)
+	if err != nil {
+		serviceErr, ok := err.(*errors.BaseError)
+		if !ok {
+			serviceErr = errors.NewBaseError("Unknown error occurred", http.StatusInternalServerError)
+		}
+		util.RespondWithError(w, serviceErr.StatusCode, serviceErr.Message)
+		return
+	}
+
+	response := map[string]string{"token": token}
+	util.RespondWithJSON(w, http.StatusOK, response)
+}

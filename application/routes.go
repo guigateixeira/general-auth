@@ -42,4 +42,5 @@ func loadRoutes(userHandler *handler.UserHandler) *chi.Mux {
 
 func loadUserRoutes(router chi.Router, userHandler *handler.UserHandler) {
 	router.Post("/signup", middlewares.EmailValidatorMiddleware(http.HandlerFunc(userHandler.CreateUser)))
+	router.Post("/signin", middlewares.EmailValidatorMiddleware(http.HandlerFunc(userHandler.SignIn)))
 }
