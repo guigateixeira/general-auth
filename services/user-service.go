@@ -4,9 +4,7 @@ import (
 	"context"
 	"log"
 	"net/http"
-	"time"
 
-	"github.com/dgrijalva/jwt-go"
 	"github.com/guigateixeira/general-auth/errors"
 	"github.com/guigateixeira/general-auth/model"
 	"github.com/guigateixeira/general-auth/repositories"
@@ -66,28 +64,10 @@ func (s *UserService) SignIn(ctx context.Context, email, password string) (strin
 		return "", errors.NewBaseError("Invalid email or password", http.StatusUnauthorized)
 	}
 
-	token, err := s.generateJWTToken(user.Id.String())
+	token, err := util.GenerateJWTToken(user.Id.String())
 	if err != nil {
 		return "", errors.NewBaseError("Error generating token", http.StatusInternalServerError)
 	}
 
 	return token, nil
-}
-
-func (s *UserService) generateJWTToken(userID string) (string, error) {
-	token := jwt.New(jwt.SigningMethodHS256)
-
-	claims := token.Claims.(jwt.MapClaims)
-	claims["user_id"] = userID
-	claims["exp"] = time.Now().Add(time.Hour * time.Duration(8)).Unix()
-
-	jwtSecret := []byte("JWTSECRETHERE")
-
-	tokenString, err := token.SignedString(jwtSecret)
-	if err != nil {
-		log.Printf("Service layer error generating token: %v", err)
-		return "", err
-	}
-
-	return tokenString, nil
 }
